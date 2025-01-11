@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API de Livros do Google</title>
+
+    <!-- Adicionando o Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-4">
+    <h1>Busca de Livros</h1>
+    <!-- Formulário de busca -->
+    <form id="searchForm" class="form-inline">
+        <label for="query" class="mr-2">Digite sua consulta:</label>
+        <input type="text" id="query" name="query" class="form-control mr-2">
+        <button type="submit" class="btn btn-primary">Pesquisar</button>
+    </form>
+
+    <h2 class="mt-4">Resultados da Pesquisa de Livros</h2>
+    <div id="results" class="row"></div>
+
+    <!-- Controles de paginação -->
+    <div id="pagination" class="mt-4 text-center">
+        <button id="prevPage" class="btn btn-secondary">Página Anterior</button>
+        <span id="currentPage" class="mx-3">Página 1</span>
+        <button id="nextPage" class="btn btn-secondary">Próxima Página</button>
+    </div>
+</div>
+
+<!-- Adicionando o Bootstrap JS (necessário para alguns componentes do Bootstrap) -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<script>
+    let currentPage = 1;
+    const resultsPerPage = 9; // Número de resultados por página
+
+    function searchBooks() {
+        const query = document.getElementById('query').value; // Obtenha a consulta do usuário
+        const startIndex = (currentPage - 1) * resultsPerPage; // Índice de início da página atual
+        const url = `https://www.googleapis.com/books/v1/volumes?q=${query}&startIndex=${startIndex}&maxResults=${resultsPerPage}`;
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const resultsList = document.getElementById('results');
+                const paginationInfo = document.getElementById('currentPage');
+
+                // Limpe a lista de resultados existente
+                resultsList.innerHTML = '';
+
+                // Itere sobre os itens de resultado e exiba-os na lista
+                data.items.forEach(item => {
+                    const title = item.volumeInfo.title;
+                    const authors = item.volumeInfo.authors ? item.volumeInfo.authors.join(', ') : 'Autor desconhecido';
+                    const description = item.volumeInfo.description || 'Descrição não disponível';
+                    const image = item.volumeInfo.imageLinks?.thumbnail || '';
+
+                    const div = document.createElement('div');
+                    div.classList.add('col-md-4', 'mb-4');
+                    div.innerHTML =
+                        `<div class="card">
+                                <img src="${image}" class="card-img-top" alt="${title}">
+                                <div class="card-body">
+                                    <h5 class="card-title">${title}</h5>
+                                    <h6 class="card-subtitle mb-2 text-muted">${authors}</h6>
+                                    <p class="card-text">${description}</p>
+                                </div>
+                            </div>`;
+
+                    // Adicione o div ao resultado
+                    resultsList.appendChild(div);
+                });
+
+                // Atualize a informação de página atual
+                paginationInfo.textContent = `Página ${currentPage}`;
+            })
+            .catch(error => {
+                console.error('Ocorreu um erro:', error);
+            });
+    }
+
+    // Função para avançar para a próxima página
+    function nextPage() {
+        currentPage++;
+        searchBooks();
+    }
+
+    // Função para voltar para a página anterior
+    function prevPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            searchBooks();
+        }
+    }
+
+    // Adicione um evento de envio de formulário
+    document.getElementById('searchForm').addEventListener('submit', function (event) {
+        event.preventDefault(); // Impede o envio padrão do formulário
+        currentPage = 1; // Reinicia a página para a primeira página
+        searchBooks(); // Realiza a pesquisa quando o formulário é enviado
+    });
+
+    // Adicione eventos de clique aos botões de próxima e anterior
+    document.getElementById('nextPage').addEventListener('click', nextPage);
+    document.getElementById('prevPage').addEventListener('click', prevPage);
+</script>
+</body>
+</html>
