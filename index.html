@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>API de Livros do Google</title>
 
-    <!-- Adicionando o Bootstrap CSS -->
+    <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
@@ -29,7 +29,7 @@
     </div>
 </div>
 
-<!-- Adicionando o Bootstrap JS (necessário para alguns componentes do Bootstrap) -->
+<!-- Bootstrap JS -->
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
@@ -39,9 +39,14 @@
     const resultsPerPage = 9; // Número de resultados por página
 
     function searchBooks() {
-        const query = document.getElementById('query').value; // Obtenha a consulta do usuário
-        const startIndex = (currentPage - 1) * resultsPerPage; // Índice de início da página atual
-        const url = `https://www.googleapis.com/books/v1/volumes?q=${query}&startIndex=${startIndex}&maxResults=${resultsPerPage}`;
+        const query = document.getElementById('query').value.trim();
+        if (!query) {
+            document.getElementById('results').innerHTML = "<p>Digite um termo para buscar.</p>";
+            return;
+        }
+
+        const startIndex = (currentPage - 1) * resultsPerPage;
+        const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&startIndex=${startIndex}&maxResults=${resultsPerPage}`;
 
         fetch(url)
             .then(response => response.json())
@@ -49,47 +54,47 @@
                 const resultsList = document.getElementById('results');
                 const paginationInfo = document.getElementById('currentPage');
 
-                // Limpe a lista de resultados existente
                 resultsList.innerHTML = '';
 
-                // Itere sobre os itens de resultado e exiba-os na lista
+                if (!data.items || data.items.length === 0) {
+                    resultsList.innerHTML = "<p>Nenhum resultado encontrado.</p>";
+                    paginationInfo.textContent = `Página ${currentPage}`;
+                    return;
+                }
+
                 data.items.forEach(item => {
-                    const title = item.volumeInfo.title;
+                    const title = item.volumeInfo.title || "Título não disponível";
                     const authors = item.volumeInfo.authors ? item.volumeInfo.authors.join(', ') : 'Autor desconhecido';
                     const description = item.volumeInfo.description || 'Descrição não disponível';
-                    const image = item.volumeInfo.imageLinks?.thumbnail || '';
+                    const image = item.volumeInfo.imageLinks?.thumbnail || 'https://via.placeholder.com/128x192?text=Sem+Imagem';
 
                     const div = document.createElement('div');
                     div.classList.add('col-md-4', 'mb-4');
                     div.innerHTML =
-                        `<div class="card">
-                                <img src="${image}" class="card-img-top" alt="${title}">
-                                <div class="card-body">
-                                    <h5 class="card-title">${title}</h5>
-                                    <h6 class="card-subtitle mb-2 text-muted">${authors}</h6>
-                                    <p class="card-text">${description}</p>
-                                </div>
-                            </div>`;
-
-                    // Adicione o div ao resultado
+                        `<div class="card h-100">
+                            <img src="${image}" class="card-img-top" alt="${title}">
+                            <div class="card-body">
+                                <h5 class="card-title">${title}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">${authors}</h6>
+                                <p class="card-text">${description}</p>
+                            </div>
+                        </div>`;
                     resultsList.appendChild(div);
                 });
 
-                // Atualize a informação de página atual
                 paginationInfo.textContent = `Página ${currentPage}`;
             })
             .catch(error => {
                 console.error('Ocorreu um erro:', error);
+                document.getElementById('results').innerHTML = "<p>Erro ao buscar livros. Tente novamente.</p>";
             });
     }
 
-    // Função para avançar para a próxima página
     function nextPage() {
         currentPage++;
         searchBooks();
     }
 
-    // Função para voltar para a página anterior
     function prevPage() {
         if (currentPage > 1) {
             currentPage--;
@@ -97,14 +102,12 @@
         }
     }
 
-    // Adicione um evento de envio de formulário
     document.getElementById('searchForm').addEventListener('submit', function (event) {
-        event.preventDefault(); // Impede o envio padrão do formulário
-        currentPage = 1; // Reinicia a página para a primeira página
-        searchBooks(); // Realiza a pesquisa quando o formulário é enviado
+        event.preventDefault();
+        currentPage = 1;
+        searchBooks();
     });
 
-    // Adicione eventos de clique aos botões de próxima e anterior
     document.getElementById('nextPage').addEventListener('click', nextPage);
     document.getElementById('prevPage').addEventListener('click', prevPage);
 </script>
